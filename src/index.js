@@ -5,6 +5,31 @@ const SteamUser = require('steam-user');
 const client = new SteamUser();
 const DATA_FPATH = './data.json';
 
+client.on('loggedOn', function(details) {
+
+    client.on('friendsList', async () => {
+        const actualFriends = invertBy(client.myFriends)['3']; // 3 means invitations, blocks, etc were removed
+        const sids = Object.values(actualFriends);
+
+        // check file (execute by date label inside); else - throw error
+        const data = await getBgs(sids);
+        const mostValuableHashes = Object.keys(data).filter(bgHash => data[bgHash].owners.length > 1);
+        const sorted = mostValuableHashes.map(bgHash => {
+            // data[bgHash].bgHash = bgHash;
+            return data[bgHash];
+        });
+
+        fs.writeFile(DATA_FPATH, JSON.stringify(sorted, null, 2), {flag: 'w+'}, err => {
+            if (err) throw new Error(err);
+        });
+    })
+});
+
+client.on('error', function(e) {
+    // Some error occurred during logon
+    console.log(e.message);
+});
+
 const main = () => {
     try {
 
@@ -16,12 +41,11 @@ const main = () => {
     }
 }
 
-main();
-
-const needsToRefresh = (path) => {
-    const {mtime} = fs.statSync(path);
-    let passedHours = Math.floor((new Date().getTime() - mtime) / 1000 / 60) / 60;
-    return passedHours >= 10
+const getBgLinkHash = (link) => {
+    link = link || '';
+    const template = /^https:\/\/steamcdn-a\.akamaihd\.net\/steamcommunity\/public\/images\/items\/.*\/(.*)\..*$/;
+    const matches = link.match(template);
+    return matches ? matches[1] : null;
 }
 
 const getBgs = async (sids) => {
@@ -36,48 +60,38 @@ const getBgs = async (sids) => {
 
     const data = {};
     withBgs.forEach(item => {
-        let {
+        let bgHash, {
             sid,
             profile_background: {
-                name, movie_mp4,
+                movie_mp4,
                 image_large: bgLink,
             },
         } = item;
 
         if (movie_mp4 !== null) bgLink = movie_mp4; // get animated if exists
 
+        bgHash = getBgLinkHash(bgLink);
+
         // check if the key of the bg obj doesn't exist
-        if (!data.hasOwnProperty(name)) {
-            data[name] = {
+        if (!data.hasOwnProperty(bgHash)) {
+            data[bgHash] = {
                 'link': bgLink,
                 'owners': [],
             };
         }
 
         // push the owner's sid by the bg's key into an owner's list :
-        data[name]['owners'].push(sid);
+        data[bgHash]['owners'].push(sid);
     })
     return data;
 }
 
-client.on('loggedOn', function(details) {
+const needsToRefresh = (path) => {
+    const {mtime} = fs.statSync(path);
+    let passedHours = Math.floor((new Date().getTime() - mtime) / 1000 / 60) / 60;
+    return passedHours >= 10
+}
 
-    client.on('friendsList', async () => {
-        const actualFriends = invertBy(client.myFriends)['3']; // 3 means invitations, blocks, etc were removed
-        const sids = Object.values(actualFriends);
+main();
 
-        // check file (execute by date label inside); else - throw error
-        const data = await getBgs(sids);
-        const mostValuableNames = Object.keys(data).filter(bgName => data[bgName].owners.length > 1);
-        const sorted = mostValuableNames.map(name => data[name]);
-
-        fs.writeFile(DATA_FPATH, JSON.stringify(sorted, null, 2), {flag: 'w+'}, err => {
-            if (err) throw new Error(err);
-        });
-    })
-});
-
-client.on('error', function(e) {
-    // Some error occurred during logon
-    console.log(e.message);
-});
+// test.map(item => getBgLinkHash(item.profile_background.image_large))
