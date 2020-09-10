@@ -1,12 +1,28 @@
 const invertBy = require('lodash.invertby');
 const fs = require('fs');
-
 const SteamUser = require('steam-user');
 
 const client = new SteamUser();
-const creds = require('./config.json');
+const DATA_FPATH = './data.json';
 
-client.logOn(creds);
+const main = () => {
+    try {
+
+        const creds = require('./config.json');
+        client.logOn(creds);
+
+    } catch (e) {
+        console.log(e.message);
+    }
+}
+
+main();
+
+const needsToRefresh = (path) => {
+    const {mtime} = fs.statSync(path);
+    let passedHours = Math.floor((new Date().getTime() - mtime) / 1000 / 60) / 60;
+    return passedHours >= 10
+}
 
 const getBgs = async (sids) => {
     // get bg object by steamid
@@ -50,8 +66,14 @@ client.on('loggedOn', function(details) {
         const actualFriends = invertBy(client.myFriends)['3']; // 3 means invitations, blocks, etc were removed
         const sids = Object.values(actualFriends);
 
+        // check file (execute by date label inside); else - throw error
         const data = await getBgs(sids);
-        console.log(data);
+        const mostValuableNames = Object.keys(data).filter(bgName => data[bgName].owners.length > 1);
+        const sorted = mostValuableNames.map(name => data[name]);
+
+        fs.writeFile(DATA_FPATH, JSON.stringify(sorted, null, 2), {flag: 'w+'}, err => {
+            if (err) throw new Error(err);
+        });
     })
 });
 
@@ -59,33 +81,3 @@ client.on('error', function(e) {
     // Some error occurred during logon
     console.log(e.message);
 });
-
-
-
-/* get all the info about the game */
-// const selectedSID = '76561199067599853';
-// client.requestRichPresence(730, [selectedSID], 'english', function(e, res) {
-//     if (e) console.log(e);
-//
-//     const chosen = res.users[selectedSID];
-//     console.log(chosen);
-// })
-
-
-/* reset bg by a single command */
-// client.chat.on('friendMessage', function(data) {
-//     const {msg} = data;
-//
-//     if (msg === `bg.reset()`) {
-//         client.setProfileBackground(0, function(e) {
-//             if (e) console.log(e.message);
-//         });
-//     }
-//
-//     console.log(data.message);
-// })
-
-// console.log(sids);
-// client.getPersonas(sids, function(err, personas) {
-//     console.log(personas);
-// })
