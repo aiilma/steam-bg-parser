@@ -10,9 +10,9 @@ class FileStorage {
             fs.statSync(this._path).mtime : new Date();
     }
 
-    write = data => {
+    write = async data => {
         const dataStr = JSON.stringify(data, null, 2);
-        fs.writeFile(this._path, dataStr, {flag: 'w+'}, err => {
+        await fs.writeFile(this._path, dataStr, {flag: 'w+'}, err => {
             if (err) throw new Error(err);
             console.log(`the data file has just been fetched`);
         });
