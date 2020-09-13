@@ -1,10 +1,10 @@
-const SteamBg = require("../modules/SteamBackground");
+const SteamBg = require("../modules/BgLink");
 const sinon = require('sinon');
 const chai = require('chai');
 const expect = chai.expect;
 
 
-describe("SteamBackground suit", function () {
+describe("BgLink suit", function () {
     describe("getLinkHash for", function () {
         it("static", function () {
             const hash = '06020b12bdd813d5906d9fe38ba5c12b07bb4cf6';
