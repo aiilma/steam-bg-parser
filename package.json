@@ -1,10 +1,7 @@
 {
-  "name": "parser-steam-friendlist-forbg",
+  "name": "steam-bg-parser",
   "version": "1.0.0",
-  "description": "",
-  "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
     "test": "mocha src/specs/**/*.spec.js"
   },
   "keywords": [],
