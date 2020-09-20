@@ -1,14 +1,13 @@
 {
-  "name": "steam-bg-parser",
-  "version": "1.0.0",
+  "name": "steam-background-parser",
+  "version": "1.0.1",
   "scripts": {
     "test": "mocha src/specs/**/*.spec.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "aiilma",
   "license": "ISC",
   "dependencies": {
-    "lodash.invertby": "^4.7.0",
     "steam-user": "^4.18.0"
   },
   "devDependencies": {
